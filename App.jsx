@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Routes, Route, Link, NavLink, useNavigate } from 'react-router'
+import { Routes, Route, Link, NavLink, useNavigate, useParams } from 'react-router'
 import './App.css'
 
 import bomber1 from './assets/bomber-1.jpg'
@@ -20,6 +20,16 @@ const products = [
     price: 24990,
     badge: 'NEW',
     images: [bomber1, bomber2, bomber3],
+    description:
+      'Кожаный бомбер Mastermind Japan — культовая вещь из японского дропа. Натуральная кожа премиум-качества, фирменная вышивка «Japan mastermind» на спине с черепом и костями. Свободный крой, рибанные манжеты и пояс. Идеально садится как оверсайз.',
+    specs: [
+      ['БРЕНД', 'MASTERMIND JAPAN'],
+      ['СОСТОЯНИЕ', 'НОВОЕ, С БИРКАМИ'],
+      ['МАТЕРИАЛ', 'НАТУРАЛЬНАЯ КОЖА'],
+      ['РАЗМЕР', 'L / 48-50'],
+      ['ЦВЕТ', 'ЧЁРНЫЙ'],
+      ['СТРАНА', 'ЯПОНИЯ'],
+    ],
   },
   {
     id: 2,
@@ -29,6 +39,16 @@ const products = [
     price: 5490,
     badge: 'USED',
     images: [adidas1, adidas2],
+    description:
+      "Куртка Adidas Originals из нулевых — настоящий винтаж. Классический ретро-крой, узнаваемый логотип на груди. Настоящая вещь из 00-х, сейчас такие уже не выпускают. Состояние идеальное для своего возраста, без дефектов.",
+    specs: [
+      ['БРЕНД', 'ADIDAS ORIGINALS'],
+      ['СОСТОЯНИЕ', 'Б/У, ОТЛИЧНОЕ'],
+      ['МАТЕРИАЛ', 'ПОЛИЭСТЕР'],
+      ['РАЗМЕР', 'M / 46-48'],
+      ['ГОД', '2000-е'],
+      ['СТРАНА', 'ГЕРМАНИЯ'],
+    ],
   },
   {
     id: 3,
@@ -38,6 +58,16 @@ const products = [
     price: 18990,
     badge: 'USED',
     images: [jeans1, jeans2, jeans3],
+    description:
+      'Джинсы Balenciaga Bootcut Flared из коллекции LGB. Классический крой клёш с потертостями и характерной фурнитурой. Оригинальный деним с плотной текстурой, идеальная посадка. Оригинал, проверено.',
+    specs: [
+      ['БРЕНД', 'BALENCIAGA'],
+      ['СОСТОЯНИЕ', 'Б/У, ОТЛИЧНОЕ'],
+      ['МАТЕРИАЛ', 'ДЕНИМ 100%'],
+      ['РАЗМЕР', '32 / W32 L34'],
+      ['КРОЙ', 'BOOTCUT / FLARED'],
+      ['СТРАНА', 'ИТАЛИЯ'],
+    ],
   },
 ]
 
@@ -68,11 +98,13 @@ function Header({ cartCount, onCartClick }) {
 function ProductCard({ product, onAdd }) {
   const [activeImg, setActiveImg] = useState(0)
   const images = product.images || [product.image]
+  const navigate = useNavigate()
 
   return (
     <div className="product-card">
       <div
         className="product-image"
+        onClick={() => navigate(`/product/${product.id}`)}
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect()
           const x = e.clientX - rect.left
@@ -105,13 +137,24 @@ function ProductCard({ product, onAdd }) {
       </div>
 
       <div className="product-info">
-        <div className="product-top">
+        <div
+          className="product-top"
+          onClick={() => navigate(`/product/${product.id}`)}
+        >
           <h3 className="product-name">{product.name}</h3>
           <span className="product-category">{product.category}</span>
         </div>
         <div className="product-bottom">
           <span className="product-price">{product.price} ₽</span>
-          <button className="add-btn" onClick={() => onAdd(product)}>+ В КОРЗИНУ</button>
+          <button
+            className="add-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              onAdd(product)
+            }}
+          >
+            + В КОРЗИНУ
+          </button>
         </div>
       </div>
     </div>
@@ -272,6 +315,77 @@ function CatalogPage({ onAdd }) {
   )
 }
 
+function ProductPage({ onAdd }) {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const product = products.find((p) => p.id === Number(id))
+  const [activeImg, setActiveImg] = useState(0)
+
+  if (!product) {
+    return (
+      <section className="page" style={{ textAlign: 'center' }}>
+        <h1 className="page-title">404</h1>
+        <p className="page-text">Товар не найден</p>
+        <button className="hero-btn" onClick={() => navigate('/catalog')}>
+          В КАТАЛОГ
+        </button>
+      </section>
+    )
+  }
+
+  return (
+    <section className="product-page">
+      <button className="back-btn" onClick={() => navigate(-1)}>← НАЗАД</button>
+
+      <div className="product-page-grid">
+        <div className="product-page-gallery">
+          <div className="product-page-main">
+            <img src={product.images[activeImg]} alt={product.name} />
+            <span className={`product-badge ${product.condition === 'USED' ? 'badge-used' : 'badge-new'}`}>
+              {product.condition === 'USED' ? 'Б/У' : 'НОВОЕ'}
+            </span>
+          </div>
+          {product.images.length > 1 && (
+            <div className="product-page-thumbs">
+              {product.images.map((src, i) => (
+                <button
+                  key={i}
+                  className={`thumb ${i === activeImg ? 'active' : ''}`}
+                  onClick={() => setActiveImg(i)}
+                >
+                  <img src={src} alt={`${product.name} ${i + 1}`} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="product-page-info">
+          <div className="product-page-category">{product.category}</div>
+          <h1 className="product-page-name">{product.name}</h1>
+          <div className="product-page-price">{product.price} ₽</div>
+
+          <p className="product-page-desc">{product.description}</p>
+
+          <button className="product-page-add" onClick={() => onAdd(product)}>
+            + ДОБАВИТЬ В КОРЗИНУ
+          </button>
+
+          <div className="product-page-specs">
+            <h3>ХАРАКТЕРИСТИКИ</h3>
+            {product.specs.map(([key, val]) => (
+              <div key={key} className="spec-row">
+                <span>{key}</span>
+                <span>{val}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function AboutPage() {
   return (
     <section className="page">
@@ -355,6 +469,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/catalog" element={<CatalogPage onAdd={addToCart} />} />
+          <Route path="/product/:id" element={<ProductPage onAdd={addToCart} />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="*" element={<NotFound />} />
